@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마리오 게임</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- jQuery 3.x snippet: -->
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #container {
+            position: absolute;
+            width: 100%;
+            height: 90%;
+            border: 1px solid black;
+        }
+
+        #mario {
+            position: absolute;
+            width: 200px;
+            bottom: 140px;
+            left: 150px;
+        }
+
+        #enemy {
+            position: absolute;
+            width: 70px;
+            bottom: 140px;
+            right: 50px;
+        }
+
+        #fire {
+            position: absolute;
+            width: 150px;
+            bottom: 140px;
+            left: 100px;
+        }
+
+        #background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-image: url("asset/bg.jpg");
+            background-size: 100% 100%;
+            animation-name: bg-slide;
+            animation-duration: 10s;
+            /* 한 싸이클의 애니메이션이 얼마에 걸쳐 일어날지 지정 */
+            animation-iteration-count: infinite;
+            /* 애니메이션 infinite로 지정하여 무한히 반복 */
+            animation-timing-function: linear;
+            /* 중간 상태들의 전환을 어떤 시간간격으로 진행할지 지정 */
+
+        }
+
+        /* 배경 움직이기 */
+        @keyframes bg-slide {
+            from { background-position: 0 0; }
+
+            to { background-position: -2000px 0; }
+        }
+
+        #score {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0%);
+            background: transparent;
+            font-size: 50px;
+        }
+    </style>
+
+</head>
+
+<body>
+    
+    <div id="container">
+        <img id="background">
+        <img id="mario" src="asset/mario.gif" alt="">
+        <img id="enemy" src="asset/enemy.gif" alt="">
+        <img id="fire" src="asset/title.gif" alt="">
+        <div id="score"></div>
+
+    </div>
+
+
+    <script>
+        let mario = $("#mario");
+        let enemy = $("#enemy");
+        let fire = $("#fire");
+        let isJumping = false;
+        let isAttack = false;
+        let score = 0;
+
+        // 주인공 점프
+        function jump() {
+            isJumping = true;
+            mario.animate({
+                bottom: "+=300px"
+            }, 200).animate({
+                bottom: "-=300px"
+            }, 600, function () {
+                isJumping = false;
+            });
+        }
+
+        // 불꽃 공격
+        function attack() {
+            isAttack = true;
+            fire.animate({
+                left: "1000px"
+            }, 1000).animate({
+                left: "100px"
+            }, 0, function() {
+                isAttack = false;
+            });
+        }
+
+
+        $("body").keydown(function (event) {
+            switch (event.code) {
+                // 스페이스바 누르면 점프
+                case "Space":
+                    // 스페이스 연타 방지
+                    if (isJumping == false) {
+                        jump();
+                    }
+                    break;
+                // 오른쪽 방향키 누르면 불꽃공격    
+                case "ArrowRight":
+                    //연타 방지
+                    if (isAttack == false) {
+                        attack();
+                    }
+                    break;
+            }
+        });
+
+
+        //화면 갱신
+        setInterval(function () {
+            // 적 이동
+            enemyMove();
+
+            //주인공 죽었는지 체크
+            if (deadCheck()) {
+                alert("마리오가 죽었습니다.");
+                console.log("마리오 사망");
+                score = 0;
+            }
+
+            //적 죽었는지 체크
+            if (enemyDeadCheck()) {
+                console.log("적군 사망")                
+                score = score + 200;
+                enemy.stop(false, true);
+                fire.stop(false, true);
+
+            }
+
+            document.getElementById("score").innerText = "점수 : " + score;            
+            console.log(score);
+        }, 100);
+
+
+        //적 이동
+        function enemyMove() {
+            $("#enemy").animate({
+                right: "120%"
+            }, Math.random() * 3000 + 2000, function () {
+                score = score + 100;
+                $("#enemy").css("right", "-100px");
+            });
+        }
+
+        //주인공 죽었는지 체크
+        function deadCheck() {
+            let isDead = false;
+
+            //let mario = $("#mario");
+            //let enemy = $("#enemy");
+
+            //마리오의 left 위치 찾기
+            let marioLeftX = parseInt(mario.css("left").replace("px", ""))
+            //마리오의 right 위치 찾기
+            let marioRightX = parseInt(mario.css("left").replace("px", "")) + parseInt(mario.css("width").replace("px", ""));
+
+            //enemy의 left 위치 찾기
+            let enemyLeftX = parseInt(enemy.css("left").replace("px", ""));
+            //enemy의 right 위치 찾기
+            let enemyRightX = parseInt(enemy.css("left").replace("px", "")) + parseInt(enemy.css("width").replace("px", ""));
+
+            //마리오의 bottom 위치 찾기
+            let marioBottom = parseInt(mario.css("bottom").replace("px", ""))
+            //enemy의 top 위치 찾기
+            let enemyheight = parseInt(enemy.css("bottom").replace("px", "")) + parseInt(enemy.css("height").replace("px", ""));
+
+            if (marioRightX > enemyLeftX && marioBottom < enemyheight && marioLeftX < enemyRightX) {                
+                isDead = true;
+            }
+            return isDead;
+        }
+
+        //적 죽었는지 체크
+        function enemyDeadCheck() {
+            let enemyIsDead = false;
+            
+            //불꽃의 right 위치 찾기
+            let fireRightX = parseInt(fire.css("left").replace("px", "")) + parseInt(fire.css("width").replace("px", ""));
+
+            //enemy의 left 위치 찾기
+            let enemyLeftX = parseInt(enemy.css("left").replace("px", ""));
+
+            if (fireRightX >= enemyLeftX && isAttack == true) {                
+                enemyIsDead = true;                 
+            } 
+            return enemyIsDead; 
+        }
+        
+        
+    </script>
+
+</body>
+
+</html>
